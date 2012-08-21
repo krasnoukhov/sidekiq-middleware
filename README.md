@@ -2,9 +2,7 @@
 
 This gem provides additional middleware for [Sidekiq](github.com/mperham/sidekiq/).
 
-Now it contains the following middlewares:
-
-* UniqueJobs (both client and server)
+See [Sidekiq Wiki](https://github.com/mperham/sidekiq/wiki/Middleware) for more details.
 
 ## Installation
 
@@ -20,26 +18,52 @@ Or install it yourself as:
 
     $ gem install sidekiq-middleware
 
-## Usage
+## Contents
 
-For example (put this code in initialize section):
+### UniqueJobs
 
-	Sidekiq.configure_server do |config|
-	  config.server_middleware do |chain|
-	    chain.add Sidekiq::Middleware::Server::UniqueJobs
-	  end
-	  config.client_middleware do |chain|
-	    chain.add Sidekiq::Middleware::Client::UniqueJobs
-	  end
-	end
+Provides uniqueness for jobs.
 
-	Sidekiq.configure_client do |config|
-	  config.client_middleware do |chain|
-	    chain.add Sidekiq::Middleware::Client::UniqueJobs
-	  end
-	end
+**Usage**
 
-See [Sidekiq Wiki](https://github.com/mperham/sidekiq/wiki/Middleware) for more details.
+Put this code in initialize section:
+
+    Sidekiq.configure_server do |config|
+      config.server_middleware do |chain|
+        chain.add Sidekiq::Middleware::Server::UniqueJobs
+      end
+      config.client_middleware do |chain|
+        chain.add Sidekiq::Middleware::Client::UniqueJobs
+      end
+    end
+    
+    Sidekiq.configure_client do |config|
+      config.client_middleware do |chain|
+        chain.add Sidekiq::Middleware::Client::UniqueJobs
+      end
+    end
+
+Example worker:
+
+    class UniqueWorker
+      include Sidekiq::Worker
+    
+      sidekiq_options({
+        # Should be set to true (enables uniqueness for async jobs)
+        # or :all (enables uniqueness for both async and scheduled jobs)
+        unique: :all,
+    
+        # Set this to true in case your job schedules itself
+        forever: true,
+    
+        # Unique expiration (optional, default is 30 minutes)
+        expiration: 24 * 60 * 60
+      })
+    
+      def perform
+        # Your code goes here
+      end
+    end
 
 ## Contributing
 
