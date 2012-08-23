@@ -28,42 +28,46 @@ Provides uniqueness for jobs.
 
 Put this code in initialize section:
 
-    Sidekiq.configure_server do |config|
-      config.server_middleware do |chain|
-        chain.add Sidekiq::Middleware::Server::UniqueJobs
-      end
-      config.client_middleware do |chain|
-        chain.add Sidekiq::Middleware::Client::UniqueJobs
-      end
+```ruby
+  Sidekiq.configure_server do |config|
+    config.server_middleware do |chain|
+     chain.add Sidekiq::Middleware::Server::UniqueJobs
     end
-    
-    Sidekiq.configure_client do |config|
-      config.client_middleware do |chain|
-        chain.add Sidekiq::Middleware::Client::UniqueJobs
-      end
+    config.client_middleware do |chain|
+     chain.add Sidekiq::Middleware::Client::UniqueJobs
     end
+  end
+  
+  Sidekiq.configure_client do |config|
+    config.client_middleware do |chain|
+      chain.add Sidekiq::Middleware::Client::UniqueJobs
+    end
+  end
+```
 
 Example worker:
 
-    class UniqueWorker
-      include Sidekiq::Worker
-    
-      sidekiq_options({
-        # Should be set to true (enables uniqueness for async jobs)
-        # or :all (enables uniqueness for both async and scheduled jobs)
-        unique: :all,
-    
-        # Set this to true in case your job schedules itself
-        forever: true,
-    
-        # Unique expiration (optional, default is 30 minutes)
-        expiration: 24 * 60 * 60
-      })
-    
-      def perform
-        # Your code goes here
-      end
+```ruby
+  class UniqueWorker
+    include Sidekiq::Worker
+  
+    sidekiq_options({
+      # Should be set to true (enables uniqueness for async jobs)
+      # or :all (enables uniqueness for both async and scheduled jobs)
+      unique: :all,
+  
+      # Set this to true in case your job schedules itself
+      forever: true,
+  
+      # Unique expiration (optional, default is 30 minutes)
+      expiration: 24 * 60 * 60
+    })
+  
+    def perform
+      # Your code goes here
     end
+  end
+```
 
 ## Contributing
 
