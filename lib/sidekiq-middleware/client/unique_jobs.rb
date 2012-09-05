@@ -1,5 +1,3 @@
-require 'digest'
-
 module Sidekiq
   module Middleware
     module Client
@@ -18,13 +16,12 @@ module Sidekiq
               payload = item.clone
               payload.delete('at')
               payload.delete('jid')
-              payload_hash = Digest::MD5.hexdigest(Sidekiq.dump_json(Hash[payload.sort]))
             else
               expiration = worker_class.get_sidekiq_options['expiration'] || HASH_KEY_EXPIRATION
               payload = item.clone
               payload.delete('jid')
-              payload_hash = Digest::MD5.hexdigest(Sidekiq.dump_json(Hash[payload.sort]))
             end
+            payload_hash = Digest::MD5.hexdigest(Sidekiq.dump_json(Hash[payload.sort]))
 
             Sidekiq.redis do |conn|
               conn.watch(payload_hash)

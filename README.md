@@ -26,25 +26,6 @@ Provides uniqueness for jobs.
 
 **Usage**
 
-Put this code in initialize section:
-
-```ruby
-  Sidekiq.configure_server do |config|
-    config.server_middleware do |chain|
-     chain.add Sidekiq::Middleware::Server::UniqueJobs
-    end
-    config.client_middleware do |chain|
-     chain.add Sidekiq::Middleware::Client::UniqueJobs
-    end
-  end
-  
-  Sidekiq.configure_client do |config|
-    config.client_middleware do |chain|
-      chain.add Sidekiq::Middleware::Client::UniqueJobs
-    end
-  end
-```
-
 Example worker:
 
 ```ruby
@@ -60,6 +41,7 @@ Example worker:
       forever: true,
   
       # Unique expiration (optional, default is 30 minutes)
+      # For scheduled jobs calculates automatically if not provided
       expiration: 24 * 60 * 60
     })
   
