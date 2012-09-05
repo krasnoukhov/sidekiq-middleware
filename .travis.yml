@@ -4,3 +4,5 @@ rvm:
 branches:
   only:
     - master
+services:
+  - redis
