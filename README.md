@@ -1,6 +1,6 @@
 # Additional sidekiq middleware [![Build Status](https://secure.travis-ci.org/krasnoukhov/sidekiq-middleware.png)](http://travis-ci.org/krasnoukhov/sidekiq-middleware)
 
-This gem provides additional middleware for [Sidekiq](github.com/mperham/sidekiq/).
+This gem provides additional middleware for [Sidekiq](https://github.com/mperham/sidekiq).
 
 See [Sidekiq Wiki](https://github.com/mperham/sidekiq/wiki/Middleware) for more details.
 
