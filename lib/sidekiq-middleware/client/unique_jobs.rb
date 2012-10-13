@@ -5,23 +5,19 @@ module Sidekiq
         HASH_KEY_EXPIRATION = 30 * 60
 
         def call(worker_class, item, queue)
-          enabled = worker_class.get_sidekiq_options['unique']
+          enabled, expiration = worker_class.get_sidekiq_options['unique'],
+            (worker_class.get_sidekiq_options['expiration'] || HASH_KEY_EXPIRATION)
 
           if enabled
-            unique = false
+            unique, payload = false, item.clone.slice(%w(class queue args at))
 
             # Enabled unique scheduled
-            if enabled == :all && item.has_key?('at')
-              expiration = worker_class.get_sidekiq_options['expiration'] || (item['at'].to_i - Time.new.to_i)
-              payload = item.clone
+            if enabled == :all && payload.has_key?('at')
+              expiration = (payload['at'].to_i - Time.now.to_i)
               payload.delete('at')
-              payload.delete('jid')
-            else
-              expiration = worker_class.get_sidekiq_options['expiration'] || HASH_KEY_EXPIRATION
-              payload = item.clone
-              payload.delete('jid')
             end
-            payload_hash = Digest::MD5.hexdigest(Sidekiq.dump_json(Hash[payload.sort]))
+
+            payload_hash = Digest::MD5.hexdigest(Sidekiq.dump_json(payload))
 
             Sidekiq.redis do |conn|
               conn.watch(payload_hash)
@@ -40,7 +36,6 @@ module Sidekiq
             yield
           end
         end
-
       end
     end
   end

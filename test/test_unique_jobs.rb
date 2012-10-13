@@ -10,7 +10,6 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
     before do
       @boss = MiniTest::Mock.new
       @processor = ::Sidekiq::Processor.new(@boss)
-      Celluloid.logger = nil
       
       Sidekiq.redis = REDIS
       Sidekiq.redis {|c| c.flushdb }
@@ -26,6 +25,11 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
 
     it 'does not duplicate messages with enabled unique option' do
       5.times { UniqueWorker.perform_async('args') }
+      assert_equal 1, Sidekiq.redis { |c| c.llen('queue:unique_queue') }
+    end
+
+    it 'discards non critical information about the message' do
+      5.times { Sidekiq::Client.push('class' => UniqueWorker, 'args' => ['critical'], 'sent_at' => Time.now.to_f, 'non' => 'critical') }
       assert_equal 1, Sidekiq.redis { |c| c.llen('queue:unique_queue') }
     end
 
@@ -53,17 +57,27 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
 
     it 'does not duplicate scheduled messages with enabled unique option' do
       5.times { |t| UniqueScheduledWorker.perform_in((t+1)*60, 'args') }
-      assert_equal 1, Sidekiq.redis { |c| c.zrangebyscore('schedule', '-inf', '+inf').length }
+      assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
 
-    it 'once schedules job in future with enabled forever option' do
+    it 'allows the job to reschedule itself with enabled forever option' do
       5.times {
-        msg = Sidekiq.dump_json({ 'class' => UniqueScheduledWorker.to_s, 'args' => ['forever'] })
+        msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'args' => ['something'])
         @boss.expect(:processor_done!, nil, [@processor])
         @processor.process(msg, 'default')
         @boss.verify
       }
-      assert_equal 1, Sidekiq.redis { |c| c.zrangebyscore('schedule', '-inf', '+inf').length }
+      assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
+    end
+
+    it 'discards non critical information about the message' do
+      5.times {|i|
+        msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'args' => ['something'], 'sent_at' => (Time.now + i*60).to_f)
+        @boss.expect(:processor_done!, nil, [@processor])
+        @processor.process(msg, 'default')
+        @boss.verify
+      }
+      assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
   end
 end

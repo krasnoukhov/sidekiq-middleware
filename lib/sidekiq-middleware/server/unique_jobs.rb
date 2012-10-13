@@ -18,22 +18,18 @@ module Sidekiq
         end
 
         def clear(worker_instance, item, queue)
-          enabled = worker_instance.class.get_sidekiq_options['unique']
+          # Only enforce uniqueness across class, queue, args, and at.
+          # Useful when middleware uses the payload to store metadata.
+          enabled, payload = worker_instance.class.get_sidekiq_options['unique'],
+            item.clone.slice(%w(class queue args at))
 
           # Enabled unique scheduled 
-          if enabled == :all && item.has_key?('at')
-            payload = item.clone
+          if enabled == :all && payload.has_key?('at')
             payload.delete('at')
-            payload.delete('jid')
-          else
-            payload = item.clone
-            payload.delete('jid')
           end
-          payload_hash = Digest::MD5.hexdigest(Sidekiq.dump_json(Hash[payload.sort]))
-          
-          Sidekiq.redis { |conn| conn.del(payload_hash) }
-        end
 
+          Sidekiq.redis { |conn| conn.del Digest::MD5.hexdigest(Sidekiq.dump_json(payload)) }
+        end
       end
     end
   end
