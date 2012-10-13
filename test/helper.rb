@@ -8,6 +8,9 @@ require 'minitest/unit'
 require 'minitest/pride'
 require 'minitest/autorun'
 
+require 'celluloid'
+Celluloid.logger = nil
+
 require 'sidekiq'
 require 'sidekiq/util'
 require 'sidekiq-middleware'
