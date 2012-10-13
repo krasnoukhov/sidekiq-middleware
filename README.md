@@ -29,26 +29,26 @@ Provides uniqueness for jobs.
 Example worker:
 
 ```ruby
-  class UniqueWorker
-    include Sidekiq::Worker
-  
-    sidekiq_options({
-      # Should be set to true (enables uniqueness for async jobs)
-      # or :all (enables uniqueness for both async and scheduled jobs)
-      unique: :all,
-  
-      # Set this to true in case your job schedules itself
-      forever: true,
-  
-      # Unique expiration (optional, default is 30 minutes)
-      # For scheduled jobs calculates automatically if not provided
-      expiration: 24 * 60 * 60
-    })
-  
-    def perform
-      # Your code goes here
-    end
+class UniqueWorker
+  include Sidekiq::Worker
+
+  sidekiq_options({
+    # Should be set to true (enables uniqueness for async jobs)
+    # or :all (enables uniqueness for both async and scheduled jobs)
+    unique: :all,
+
+    # Set this to true in case your job schedules itself
+    forever: true,
+
+    # Unique expiration (optional, default is 30 minutes)
+    # For scheduled jobs calculates automatically if not provided
+    expiration: 24 * 60 * 60
+  })
+
+  def perform
+    # Your code goes here
   end
+end
 ```
 
 ## Contributing

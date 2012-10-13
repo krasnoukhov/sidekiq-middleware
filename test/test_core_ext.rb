@@ -1,5 +1,5 @@
 require 'helper'
-require 'sidekiq-middleware/core_ext'
+require 'sidekiq-middleware'
 
 class TestCoreExt < MiniTest::Unit::TestCase
   describe 'for an empty array' do
