@@ -1,3 +1,8 @@
+0.0.5
+-----------
+
+- Fixed arguments passed to Hash#slice to be convinient with ActiveSupport slice
+
 0.0.4
 -----------
 

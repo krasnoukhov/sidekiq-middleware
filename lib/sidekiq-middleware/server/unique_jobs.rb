@@ -21,7 +21,7 @@ module Sidekiq
           # Only enforce uniqueness across class, queue, args, and at.
           # Useful when middleware uses the payload to store metadata.
           enabled, payload = worker_instance.class.get_sidekiq_options['unique'],
-            item.clone.slice(%w(class queue args at))
+            item.clone.slice(*%w(class queue args at))
 
           # Enabled unique scheduled 
           if enabled == :all && payload.has_key?('at')

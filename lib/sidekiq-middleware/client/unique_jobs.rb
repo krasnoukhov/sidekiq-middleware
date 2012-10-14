@@ -9,7 +9,7 @@ module Sidekiq
             (worker_class.get_sidekiq_options['expiration'] || HASH_KEY_EXPIRATION)
 
           if enabled
-            unique, payload = false, item.clone.slice(%w(class queue args at))
+            unique, payload = false, item.clone.slice(*%w(class queue args at))
 
             # Enabled unique scheduled
             if enabled == :all && payload.has_key?('at')
