@@ -4,8 +4,8 @@ class Hash
 
     {}.tap do |hash|
       items.each do |item|
-        hash[item] = self[item] if self[item]
+        hash[item] = self[item] if self.key?(item)
       end
     end
-  end
+  end unless new.respond_to?(:slice)
 end

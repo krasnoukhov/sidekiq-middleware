@@ -20,6 +20,12 @@ class TestCoreExt < MiniTest::Unit::TestCase
     end
   end
 
+  describe 'for keys in the hash' do
+    it 'should be the attributes' do
+      assert_equal({:foo => nil}, {:foo => nil, :foobar => "baz"}.slice(:foo))
+    end
+  end
+
   describe 'when all items are in the hash' do
     it 'should be the hash' do
       assert_equal({:foo => "bar", :foobar => "baz"}, {:foo => "bar", :foobar => "baz"}.slice(:foo, :foobar))
