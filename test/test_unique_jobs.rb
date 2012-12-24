@@ -63,9 +63,10 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
     it 'allows the job to reschedule itself with enabled forever option' do
       5.times {
         msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'args' => ['something'])
-        @boss.expect(:processor_done!, nil, [@processor])
+        actor = MiniTest::Mock.new
+        actor.expect(:processor_done, nil, [@processor])
+        @boss.expect(:async, actor, [])
         @processor.process(msg, 'default')
-        @boss.verify
       }
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
@@ -73,9 +74,10 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
     it 'discards non critical information about the message' do
       5.times {|i|
         msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'args' => ['something'], 'sent_at' => (Time.now + i*60).to_f)
-        @boss.expect(:processor_done!, nil, [@processor])
+        actor = MiniTest::Mock.new
+        actor.expect(:processor_done, nil, [@processor])
+        @boss.expect(:async, actor, [])
         @processor.process(msg, 'default')
-        @boss.verify
       }
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
