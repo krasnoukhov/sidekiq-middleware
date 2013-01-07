@@ -1,3 +1,8 @@
+0.0.6
+-----------
+
+- Now all unique locks are prefixed with "locks:unique:" and could be found using wildcard
+
 0.0.5
 -----------
 
