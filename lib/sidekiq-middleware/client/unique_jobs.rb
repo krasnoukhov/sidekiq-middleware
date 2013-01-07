@@ -17,7 +17,7 @@ module Sidekiq
               payload.delete('at')
             end
 
-            payload_hash = Digest::MD5.hexdigest(Sidekiq.dump_json(payload))
+            payload_hash = "locks:unique:#{Digest::MD5.hexdigest(Sidekiq.dump_json(payload))}"
 
             Sidekiq.redis do |conn|
               conn.watch(payload_hash)

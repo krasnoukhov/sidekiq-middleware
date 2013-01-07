@@ -28,7 +28,7 @@ module Sidekiq
             payload.delete('at')
           end
 
-          Sidekiq.redis { |conn| conn.del Digest::MD5.hexdigest(Sidekiq.dump_json(payload)) }
+          Sidekiq.redis { |conn| conn.del "locks:unique:#{Digest::MD5.hexdigest(Sidekiq.dump_json(payload))}" }
         end
       end
     end
