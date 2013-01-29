@@ -60,13 +60,28 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
 
+    UnitOfWork = Struct.new(:queue, :message) do
+      def acknowledge
+        # nothing to do
+      end
+
+      def queue_name
+        queue
+      end
+
+      def requeue
+        # nothing to do
+      end
+    end
+
     it 'allows the job to reschedule itself with enabled forever option' do
       5.times {
         msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'args' => ['something'])
         actor = MiniTest::Mock.new
         actor.expect(:processor_done, nil, [@processor])
         @boss.expect(:async, actor, [])
-        @processor.process(msg, 'default')
+        work = UnitOfWork.new('default', msg)
+        @processor.process(work)
       }
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
@@ -77,7 +92,8 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
         actor = MiniTest::Mock.new
         actor.expect(:processor_done, nil, [@processor])
         @boss.expect(:async, actor, [])
-        @processor.process(msg, 'default')
+        work = UnitOfWork.new('default', msg)
+        @processor.process(work)
       }
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
