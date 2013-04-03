@@ -37,8 +37,10 @@ class UniqueWorker
     # or :all (enables uniqueness for both async and scheduled jobs)
     unique: :all,
 
-    # Set this to true in case your job schedules itself
-    forever: true,
+    # Set this to true in case your job schedules itself.
+    # You also could specify forever: :manual. In this case middleware will not clear the unique lock automatically.
+    # But you'll be able to handle unique expiration inside your worker, please see example below.
+    forever: :manual,
 
     # Unique expiration (optional, default is 30 minutes)
     # For scheduled jobs calculates automatically if not provided
@@ -46,6 +48,9 @@ class UniqueWorker
   })
 
   def perform
+    # Clear expiration lock (only for forever: :manual)
+    Sidekiq.redis { |conn| conn.del @unique_lock_key }
+    
     # Your code goes here
   end
 end

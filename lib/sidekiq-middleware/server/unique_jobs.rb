@@ -8,7 +8,11 @@ module Sidekiq
 
           # Delete lock first if forever is set
           # Used for jobs which may scheduling self in future
-          clear(worker_instance, item, queue) if forever
+          if forever == :manual
+            worker_instance.instance_variable_set(:@unique_lock_key, unique_lock_key(worker_instance, item, queue))
+          elsif forever
+            clear(worker_instance, item, queue) if forever
+          end
 
           begin
             yield
@@ -17,7 +21,7 @@ module Sidekiq
           end
         end
 
-        def clear(worker_instance, item, queue)
+        def unique_lock_key(worker_instance, item, queue)
           # Only enforce uniqueness across class, queue, args, and at.
           # Useful when middleware uses the payload to store metadata.
           enabled, payload = worker_instance.class.get_sidekiq_options['unique'],
@@ -28,7 +32,11 @@ module Sidekiq
             payload.delete('at')
           end
 
-          Sidekiq.redis { |conn| conn.del "locks:unique:#{Digest::MD5.hexdigest(Sidekiq.dump_json(payload))}" }
+          "locks:unique:#{Digest::MD5.hexdigest(Sidekiq.dump_json(payload))}"
+        end
+
+        def clear(worker_instance, item, queue)
+          Sidekiq.redis { |conn| conn.del unique_lock_key(worker_instance, item, queue) }
         end
       end
     end
