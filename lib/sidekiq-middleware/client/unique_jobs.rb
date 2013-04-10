@@ -13,7 +13,8 @@ module Sidekiq
 
             # Enabled unique scheduled
             if enabled == :all && payload.has_key?('at')
-              expiration = (payload['at'].to_i - Time.now.to_i)
+              # Give scheduled job a hour to perform
+              expiration = (payload['at'].to_i - Time.now.to_i + 60 * 60)
               payload.delete('at')
             end
 
