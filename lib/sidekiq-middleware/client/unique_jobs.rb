@@ -18,7 +18,7 @@ module Sidekiq
               payload.delete('at')
             end
 
-            payload_hash = "locks:unique:#{Digest::MD5.hexdigest(Sidekiq.dump_json(payload))}"
+            payload_hash = Sidekiq::Middleware::UniqueKey.generate(worker_class, payload)
 
             Sidekiq.redis do |conn|
               conn.watch(payload_hash)
