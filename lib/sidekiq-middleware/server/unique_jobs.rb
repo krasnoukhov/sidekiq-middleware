@@ -27,12 +27,12 @@ module Sidekiq
           enabled, payload = worker_instance.class.get_sidekiq_options['unique'],
             item.clone.slice(*%w(class queue args at))
 
-          # Enabled unique scheduled 
+          # Enabled unique scheduled
           if enabled == :all && payload.has_key?('at')
             payload.delete('at')
           end
 
-          "locks:unique:#{Digest::MD5.hexdigest(Sidekiq.dump_json(payload))}"
+          Sidekiq::Middleware::UniqueKey.generate(worker_instance.class, payload)
         end
 
         def clear(worker_instance, item, queue)
