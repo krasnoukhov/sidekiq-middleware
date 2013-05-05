@@ -10,7 +10,7 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
     before do
       @boss = MiniTest::Mock.new
       @processor = ::Sidekiq::Processor.new(@boss)
-      
+
       Sidekiq.redis = REDIS
       Sidekiq.redis {|c| c.flushdb }
     end
@@ -31,6 +31,24 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
     it 'discards non critical information about the message' do
       5.times { Sidekiq::Client.push('class' => UniqueWorker, 'args' => ['critical'], 'sent_at' => Time.now.to_f, 'non' => 'critical') }
       assert_equal 1, Sidekiq.redis { |c| c.llen('queue:unique_queue') }
+    end
+
+    class CustomUniqueWorker
+      include Sidekiq::Worker
+      sidekiq_options queue: :custom_unique_queue, unique: true
+
+      def self.lock(x)
+        'custom:unique:lock:key'
+      end
+
+      def perform(x)
+      end
+    end
+
+    it 'does not duplicate messages with enabled unique option and custom unique lock key' do
+      5.times { CustomUniqueWorker.perform_async('args') }
+      assert_equal 1, Sidekiq.redis { |c| c.llen('queue:custom_unique_queue') }
+      assert_equal 1, Sidekiq.redis { |c| c.get('custom:unique:lock:key').to_i }
     end
 
     class NotUniqueWorker
