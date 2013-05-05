@@ -15,6 +15,20 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       Sidekiq.redis {|c| c.flushdb }
     end
 
+    UnitOfWork = Struct.new(:queue, :message) do
+      def acknowledge
+        # nothing to do
+      end
+
+      def queue_name
+        queue
+      end
+
+      def requeue
+        # nothing to do
+      end
+    end
+
     class UniqueWorker
       include Sidekiq::Worker
       sidekiq_options queue: :unique_queue, unique: true
@@ -33,24 +47,6 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       assert_equal 1, Sidekiq.redis { |c| c.llen('queue:unique_queue') }
     end
 
-    class CustomUniqueWorker
-      include Sidekiq::Worker
-      sidekiq_options queue: :custom_unique_queue, unique: true
-
-      def self.lock(x)
-        'custom:unique:lock:key'
-      end
-
-      def perform(x)
-      end
-    end
-
-    it 'does not duplicate messages with enabled unique option and custom unique lock key' do
-      5.times { CustomUniqueWorker.perform_async('args') }
-      assert_equal 1, Sidekiq.redis { |c| c.llen('queue:custom_unique_queue') }
-      assert_equal 1, Sidekiq.redis { |c| c.get('custom:unique:lock:key').to_i }
-    end
-
     class NotUniqueWorker
       include Sidekiq::Worker
       sidekiq_options queue: :not_unique_queue, unique: false
@@ -66,7 +62,7 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
 
     class UniqueScheduledWorker
       include Sidekiq::Worker
-      sidekiq_options queue: :unique_scheduled_queue, unique: :all, forever: true
+      sidekiq_options queue: :unique_scheduled_queue, unique: :all, manual: true
 
       def perform(x)
         UniqueScheduledWorker.perform_in(60, x)
@@ -78,23 +74,34 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
 
-    UnitOfWork = Struct.new(:queue, :message) do
-      def acknowledge
-        # nothing to do
+    class CustomUniqueWorker
+      include Sidekiq::Worker
+      sidekiq_options queue: :custom_unique_queue, unique: :all, manual: true
+
+      def self.lock(id, unlock)
+        "custom:unique:lock:#{id}"
       end
 
-      def queue_name
-        queue
+      def self.unlock!(id, unlock)
+        lock = self.lock(id, unlock)
+        Sidekiq.redis { |conn| conn.del(lock) }
       end
 
-      def requeue
-        # nothing to do
+      def perform(id, unlock)
+        self.class.unlock!(id, unlock) if unlock
+        CustomUniqueWorker.perform_in(60, id, unlock)
       end
     end
 
-    it 'allows the job to reschedule itself with enabled forever option' do
+    it 'does not duplicate messages with enabled unique option and custom unique lock key' do
+      5.times { CustomUniqueWorker.perform_async('args', false) }
+      assert_equal 1, Sidekiq.redis { |c| c.llen('queue:custom_unique_queue') }
+      assert_equal 1, Sidekiq.redis { |c| c.get('custom:unique:lock:args').to_i }
+    end
+
+    it 'does not allow the job to be duplicated when processing job with manual option' do
       5.times {
-        msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'args' => ['something'])
+        msg = Sidekiq.dump_json('class' => CustomUniqueWorker.to_s, 'args' => ['something', false])
         actor = MiniTest::Mock.new
         actor.expect(:processor_done, nil, [@processor])
         @boss.expect(:async, actor, [])
@@ -106,7 +113,7 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
 
     it 'discards non critical information about the message' do
       5.times {|i|
-        msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'args' => ['something'], 'sent_at' => (Time.now + i*60).to_f)
+        msg = Sidekiq.dump_json('class' => CustomUniqueWorker.to_s, 'args' => ['something', false], 'sent_at' => (Time.now + i*60).to_f)
         actor = MiniTest::Mock.new
         actor.expect(:processor_done, nil, [@processor])
         @boss.expect(:async, actor, [])
@@ -114,6 +121,18 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
         @processor.process(work)
       }
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
+    end
+
+    it 'allows a job to be rescheduled when processing using unlock' do
+      5.times {
+        msg = Sidekiq.dump_json('class' => CustomUniqueWorker.to_s, 'args' => ['something', true])
+        actor = MiniTest::Mock.new
+        actor.expect(:processor_done, nil, [@processor])
+        @boss.expect(:async, actor, [])
+        work = UnitOfWork.new('default', msg)
+        @processor.process(work)
+      }
+      assert_equal 5, Sidekiq.redis { |c| c.zcard('schedule') }
     end
   end
 end

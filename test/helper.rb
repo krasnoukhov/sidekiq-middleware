@@ -12,6 +12,8 @@ require 'celluloid'
 Celluloid.logger = nil
 
 require 'sidekiq'
+require 'sidekiq/cli'
+require 'sidekiq/processor'
 require 'sidekiq/util'
 require 'sidekiq-middleware'
 Sidekiq.logger.level = Logger::ERROR

@@ -4,20 +4,12 @@ module Sidekiq
       class UniqueJobs
 
         def call(worker_instance, item, queue)
-          forever = worker_instance.class.get_sidekiq_options['forever']
-
-          # Delete lock first if forever is set
-          # Used for jobs which may scheduling self in future
-          if forever == :manual
-            worker_instance.instance_variable_set(:@unique_lock_key, unique_lock_key(worker_instance, item, queue))
-          elsif forever
-            clear(worker_instance, item, queue) if forever
-          end
+          manual = worker_instance.class.get_sidekiq_options['manual']
 
           begin
             yield
           ensure
-            clear(worker_instance, item, queue) unless forever
+            clear(worker_instance, item, queue) unless manual
           end
         end
 
