@@ -13,8 +13,9 @@ module Sidekiq
 
             # Enabled unique scheduled
             if enabled == :all && payload.has_key?('at')
-              scheduled_expiration = (payload['at'].to_i - Time.now.to_i)
-              expiration = scheduled_expiration if scheduled_expiration > expiration
+              # Use expiration period as specified in configuration,
+              # but relative to job schedule time
+              expiration += (payload['at'].to_i - Time.now.to_i)
               payload.delete('at')
             end
 

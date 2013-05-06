@@ -1,3 +1,8 @@
+0.1.1
+-----------
+
+- Improved lock expiration period for scheduled jobs
+
 0.1.0
 -----------
 

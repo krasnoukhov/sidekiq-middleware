@@ -38,7 +38,7 @@ class UniqueWorker
     unique: :all,
 
     # Unique expiration (optional, default is 30 minutes)
-    # For scheduled jobs calculates automatically
+    # For scheduled jobs calculates automatically based on schedule time and expiration period
     expiration: 24 * 60 * 60
   })
 
