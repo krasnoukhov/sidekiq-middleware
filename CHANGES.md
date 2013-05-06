@@ -1,3 +1,9 @@
+0.1.0
+-----------
+
+- Added ability to set custom lock key ([dimko](https://github.com/dimko))
+- Removed forever option due to race condition issues. Added ability to manually operate unique locks instead
+
 0.0.6
 -----------
 
@@ -11,12 +17,12 @@
 0.0.4
 -----------
 
-- Fixed Hash#slice (bnorton)
+- Fixed Hash#slice ([bnorton](https://github.com/bnorton))
 
 0.0.3
 -----------
 
-- Refactored and simplified the UniqueJobs middleware server and client as well as only enforcing the uniqueness of the payload across the keys for class, queue, args, and at (bnorton)
+- Refactored and simplified the UniqueJobs middleware server and client as well as only enforcing the uniqueness of the payload across the keys for class, queue, args, and at ([bnorton](https://github.com/bnorton))
 
 0.0.2
 -----------
