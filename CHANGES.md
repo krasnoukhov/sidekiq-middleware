@@ -1,3 +1,8 @@
+0.1.2
+-----------
+
+- Fixed unique jobs server middleware to clear lock only when unique is enabled
+
 0.1.1
 -----------
 
