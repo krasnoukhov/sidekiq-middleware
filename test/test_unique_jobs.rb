@@ -62,16 +62,33 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
 
     class UniqueScheduledWorker
       include Sidekiq::Worker
-      sidekiq_options queue: :unique_scheduled_queue, unique: :all, manual: true
+      sidekiq_options queue: :unique_scheduled_queue, unique: :all
 
       def perform(x)
-        UniqueScheduledWorker.perform_in(60, x)
       end
     end
 
     it 'does not duplicate scheduled messages with enabled unique option' do
       5.times { |t| UniqueScheduledWorker.perform_in((t+1)*60, 'args') }
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
+    end
+
+    it 'allows the job to be re-scheduled after processing' do
+      # Schedule
+      5.times { |t| UniqueScheduledWorker.perform_in((t+1)*60, 'args') }
+      assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
+      
+      # Process
+      msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'queue' => 'unique_scheduled_queue', 'args' => ['args'])
+      actor = MiniTest::Mock.new
+      actor.expect(:processor_done, nil, [@processor])
+      @boss.expect(:async, actor, [])
+      work = UnitOfWork.new('default', msg)
+      @processor.process(work)
+      
+      # Re-schedule
+      5.times { |t| UniqueScheduledWorker.perform_in((t+1)*60, 'args') }
+      assert_equal 2, Sidekiq.redis { |c| c.zcard('schedule') }
     end
 
     class CustomUniqueWorker

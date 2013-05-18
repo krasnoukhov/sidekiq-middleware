@@ -28,7 +28,8 @@ module Sidekiq
         end
 
         def clear(worker_instance, item, queue)
-          Sidekiq.redis { |conn| conn.del unique_lock_key(worker_instance, item, queue) }
+          enabled = worker_instance.class.get_sidekiq_options['unique']
+          Sidekiq.redis { |conn| conn.del unique_lock_key(worker_instance, item, queue) } if enabled
         end
       end
     end
