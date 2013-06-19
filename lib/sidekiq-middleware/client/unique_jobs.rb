@@ -5,6 +5,8 @@ module Sidekiq
         HASH_KEY_EXPIRATION = 30 * 60
 
         def call(worker_class, item, queue)
+          worker_class = worker_class.constantize if worker_class.is_a?(String)
+
           enabled, expiration = worker_class.get_sidekiq_options['unique'],
             (worker_class.get_sidekiq_options['expiration'] || HASH_KEY_EXPIRATION)
 

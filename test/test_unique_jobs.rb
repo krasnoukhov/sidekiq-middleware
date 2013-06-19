@@ -77,15 +77,16 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       # Schedule
       5.times { |t| UniqueScheduledWorker.perform_in((t+1)*60, 'args') }
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
-      
+
       # Process
       msg = Sidekiq.dump_json('class' => UniqueScheduledWorker.to_s, 'queue' => 'unique_scheduled_queue', 'args' => ['args'])
       actor = MiniTest::Mock.new
       actor.expect(:processor_done, nil, [@processor])
-      @boss.expect(:async, actor, [])
+      actor.expect(:real_thread, nil, [nil, Celluloid::Thread])
+      2.times { @boss.expect(:async, actor, []) }
       work = UnitOfWork.new('default', msg)
       @processor.process(work)
-      
+
       # Re-schedule
       5.times { |t| UniqueScheduledWorker.perform_in((t+1)*60, 'args') }
       assert_equal 2, Sidekiq.redis { |c| c.zcard('schedule') }
@@ -121,7 +122,8 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
         msg = Sidekiq.dump_json('class' => CustomUniqueWorker.to_s, 'args' => ['something', false])
         actor = MiniTest::Mock.new
         actor.expect(:processor_done, nil, [@processor])
-        @boss.expect(:async, actor, [])
+        actor.expect(:real_thread, nil, [nil, Celluloid::Thread])
+        2.times { @boss.expect(:async, actor, []) }
         work = UnitOfWork.new('default', msg)
         @processor.process(work)
       }
@@ -133,7 +135,8 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
         msg = Sidekiq.dump_json('class' => CustomUniqueWorker.to_s, 'args' => ['something', false], 'sent_at' => (Time.now + i*60).to_f)
         actor = MiniTest::Mock.new
         actor.expect(:processor_done, nil, [@processor])
-        @boss.expect(:async, actor, [])
+        actor.expect(:real_thread, nil, [nil, Celluloid::Thread])
+        2.times { @boss.expect(:async, actor, []) }
         work = UnitOfWork.new('default', msg)
         @processor.process(work)
       }
@@ -145,7 +148,8 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
         msg = Sidekiq.dump_json('class' => CustomUniqueWorker.to_s, 'args' => ['something', true])
         actor = MiniTest::Mock.new
         actor.expect(:processor_done, nil, [@processor])
-        @boss.expect(:async, actor, [])
+        actor.expect(:real_thread, nil, [nil, Celluloid::Thread])
+        2.times { @boss.expect(:async, actor, []) }
         work = UnitOfWork.new('default', msg)
         @processor.process(work)
       }
