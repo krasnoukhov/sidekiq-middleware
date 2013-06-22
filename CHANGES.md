@@ -1,3 +1,8 @@
+0.1.3
+-----------
+
+- Constantize string worker_class in client middleware, require newest Sidekiq ([dimko](https://github.com/dimko))
+
 0.1.2
 -----------
 
