@@ -1,5 +1,6 @@
 require 'securerandom'
 require 'helper'
+require 'timecop'
 require 'sidekiq/client'
 require 'sidekiq/worker'
 require 'sidekiq/processor'
@@ -71,6 +72,19 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
     it 'does not duplicate scheduled messages with enabled unique option' do
       5.times { |t| UniqueScheduledWorker.perform_in((t+1)*60, 'args') }
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
+    end
+
+    it 'does correctly handle adding to the worker queue when scheduled' do
+      start_time = Time.now - 60
+      queue_time = start_time + 30
+      Timecop.travel start_time do
+        UniqueScheduledWorker.perform_at queue_time, 'x'
+      end
+      assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
+      assert_equal 0, Sidekiq.redis { |c| c.llen('queue:unique_scheduled_queue') }
+      Sidekiq::Scheduled::Poller.new.poll
+      assert_equal 0, Sidekiq.redis { |c| c.zcard('schedule') }
+      assert_equal 1, Sidekiq.redis { |c| c.llen('queue:unique_scheduled_queue') }
     end
 
     it 'allows the job to be re-scheduled after processing' do
@@ -155,5 +169,6 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       }
       assert_equal 5, Sidekiq.redis { |c| c.zcard('schedule') }
     end
+
   end
 end
