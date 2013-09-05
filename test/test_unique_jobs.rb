@@ -128,7 +128,9 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
     it 'does not duplicate messages with enabled unique option and custom unique lock key' do
       5.times { CustomUniqueWorker.perform_async('args', false) }
       assert_equal 1, Sidekiq.redis { |c| c.llen('queue:custom_unique_queue') }
-      assert_equal 1, Sidekiq.redis { |c| c.get('custom:unique:lock:args').to_i }
+      job = Sidekiq.load_json Sidekiq.redis { |c| c.lpop('queue:custom_unique_queue') }
+      assert job['jid']
+      assert_equal job['jid'], Sidekiq.redis { |c| c.get('custom:unique:lock:args') }
     end
 
     it 'does not allow the job to be duplicated when processing job with manual option' do
