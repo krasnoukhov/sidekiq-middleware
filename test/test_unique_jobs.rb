@@ -9,6 +9,7 @@ require 'sidekiq-middleware'
 class TestUniqueJobs < MiniTest::Unit::TestCase
   describe 'with real redis' do
     before do
+      Celluloid.boot
       @boss = MiniTest::Mock.new
       @processor = ::Sidekiq::Processor.new(@boss)
 
