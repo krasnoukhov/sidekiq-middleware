@@ -1,3 +1,8 @@
+0.1.4
+-----------
+
+- Make sure that scheduled unique jobs correctly move from the queue to work ([Sutto](https://github.com/Sutto))
+
 0.1.3
 -----------
 
