@@ -1,5 +1,6 @@
 require 'securerandom'
 require 'helper'
+require 'timecop'
 require 'sidekiq/client'
 require 'sidekiq/worker'
 require 'sidekiq/processor'
@@ -8,6 +9,7 @@ require 'sidekiq-middleware'
 class TestUniqueJobs < MiniTest::Unit::TestCase
   describe 'with real redis' do
     before do
+      Celluloid.boot
       @boss = MiniTest::Mock.new
       @processor = ::Sidekiq::Processor.new(@boss)
 
@@ -73,6 +75,19 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
     end
 
+    it 'does correctly handle adding to the worker queue when scheduled' do
+      start_time = Time.now - 60
+      queue_time = start_time + 30
+      Timecop.travel start_time do
+        UniqueScheduledWorker.perform_at queue_time, 'x'
+      end
+      assert_equal 1, Sidekiq.redis { |c| c.zcard('schedule') }
+      assert_equal 0, Sidekiq.redis { |c| c.llen('queue:unique_scheduled_queue') }
+      Sidekiq::Scheduled::Poller.new.poll
+      assert_equal 0, Sidekiq.redis { |c| c.zcard('schedule') }
+      assert_equal 1, Sidekiq.redis { |c| c.llen('queue:unique_scheduled_queue') }
+    end
+
     it 'allows the job to be re-scheduled after processing' do
       # Schedule
       5.times { |t| UniqueScheduledWorker.perform_in((t+1)*60, 'args') }
@@ -114,7 +129,9 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
     it 'does not duplicate messages with enabled unique option and custom unique lock key' do
       5.times { CustomUniqueWorker.perform_async('args', false) }
       assert_equal 1, Sidekiq.redis { |c| c.llen('queue:custom_unique_queue') }
-      assert_equal 1, Sidekiq.redis { |c| c.get('custom:unique:lock:args').to_i }
+      job = Sidekiq.load_json Sidekiq.redis { |c| c.lpop('queue:custom_unique_queue') }
+      assert job['jid']
+      assert_equal job['jid'], Sidekiq.redis { |c| c.get('custom:unique:lock:args') }
     end
 
     it 'does not allow the job to be duplicated when processing job with manual option' do
@@ -155,5 +172,6 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       }
       assert_equal 5, Sidekiq.redis { |c| c.zcard('schedule') }
     end
+
   end
 end
