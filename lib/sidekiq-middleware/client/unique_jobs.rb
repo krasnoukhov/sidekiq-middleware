@@ -12,6 +12,7 @@ module Sidekiq
 
           if enabled
             unique, payload = false, item.clone.slice(*%w(class queue args at))
+            job_id = item['jid']
 
             # Enabled unique scheduled
             if enabled == :all && payload.has_key?('at')
@@ -26,11 +27,12 @@ module Sidekiq
             Sidekiq.redis do |conn|
               conn.watch(payload_hash)
 
-              if conn.get(payload_hash)
+              locked_job_id = conn.get(payload_hash)
+              if locked_job_id && locked_job_id != job_id
                 conn.unwatch
               else
                 unique = conn.multi do
-                  conn.setex(payload_hash, expiration, 1)
+                  conn.setex(payload_hash, expiration, job_id)
                 end
               end
             end
