@@ -1,4 +1,10 @@
-# Additional sidekiq middleware [![Build Status](https://secure.travis-ci.org/krasnoukhov/sidekiq-middleware.png)](http://travis-ci.org/krasnoukhov/sidekiq-middleware)
+# Additional sidekiq middleware
+
+[![Gem Version](https://badge.fury.io/rb/sidekiq-middleware.png)](http://badge.fury.io/rb/sidekiq-middleware)
+[![Code Climate](https://codeclimate.com/github/krasnoukhov/sidekiq-middleware.png)](https://codeclimate.com/github/krasnoukhov/sidekiq-middleware)
+[![Build Status](https://secure.travis-ci.org/krasnoukhov/sidekiq-middleware.png)](http://travis-ci.org/krasnoukhov/sidekiq-middleware)
+[![Coverage Status](https://coveralls.io/repos/krasnoukhov/sidekiq-middleware/badge.png)](https://coveralls.io/r/krasnoukhov/sidekiq-middleware)
+
 
 This gem provides additional middleware for [Sidekiq](https://github.com/mperham/sidekiq).
 

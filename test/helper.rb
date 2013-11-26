@@ -4,6 +4,9 @@ if ENV.has_key?('SIMPLECOV')
   SimpleCov.start
 end
 
+require 'coveralls'
+Coveralls.wear!
+
 require 'minitest/unit'
 require 'minitest/pride'
 require 'minitest/autorun'
