@@ -1,4 +1,3 @@
-require 'securerandom'
 require 'helper'
 require 'timecop'
 require 'sidekiq/client'
@@ -44,6 +43,12 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
         5.times { NotUniqueWorker.perform_async('args') }
         assert_equal 5, Sidekiq.redis { |c| c.llen('queue:not_unique_queue') }
       end
+
+      it 'duplicates scheduled messages' do
+        at = Time.now.to_f
+        5.times { Sidekiq::Client.push('class' => NotUniqueWorker, 'args' => ['args'], 'at' => at) }
+        assert_equal 5, Sidekiq.redis { |c| c.zcard('schedule') }
+      end
     end
 
     describe 'when unique option is enabled (unique: true)' do
@@ -63,6 +68,12 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       it 'discards non critical information about the message' do
         5.times { Sidekiq::Client.push('class' => UniqueWorker, 'args' => ['critical'], 'sent_at' => Time.now.to_f, 'non' => 'critical') }
         assert_equal 1, Sidekiq.redis { |c| c.llen('queue:unique_queue') }
+      end
+
+      it 'duplicates scheduled messages' do
+        at = Time.now.to_f
+        5.times { Sidekiq::Client.push('class' => UniqueWorker, 'args' => ['args'], 'at' => at) }
+        assert_equal 5, Sidekiq.redis { |c| c.zcard('schedule') }
       end
     end
 
