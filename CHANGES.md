@@ -1,3 +1,8 @@
+0.2.0
+-----------
+
+- Fix scheduled jobs locking when ```unique``` is not set to ```:all``` ([dimko](https://github.com/dimko))
+
 0.1.4
 -----------
 
