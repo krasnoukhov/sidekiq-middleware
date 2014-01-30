@@ -1,7 +1,12 @@
+0.2.1
+-----------
+
+- Make middleware work properly even for ```Sidekiq::Extensions``` workers ([dimko](https://github.com/dimko))
+
 0.2.0
 -----------
 
-- Fix scheduled jobs locking when ```unique``` is not set to ```:all``` ([dimko](https://github.com/dimko))
+- Fix redundant scheduled jobs locking when ```unique``` is not set to ```:all``` ([dimko](https://github.com/dimko))
 
 0.1.4
 -----------
