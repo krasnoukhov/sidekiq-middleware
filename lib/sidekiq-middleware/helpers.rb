@@ -1,12 +1,14 @@
 module Sidekiq
   module Middleware
-    module Worker
+    module Helpers
+      extend self
+
       UNIQUE_EXPIRATION = 30 * 60 # 30 minutes
 
-      def unique_digest(item)
-        if respond_to?(:lock)
+      def unique_digest(klass, item)
+        if klass.respond_to?(:lock)
           args = item['args']
-          lock(*args)
+          klass.lock(*args)
         else
           dumped = Sidekiq.dump_json(item.slice('class', 'queue', 'args'))
           digest = Digest::MD5.hexdigest(dumped)
@@ -15,25 +17,21 @@ module Sidekiq
         end
       end
 
-      def unique_exiration
-        get_sidekiq_options['expiration'] || UNIQUE_EXPIRATION
+      def unique_exiration(klass)
+        klass.get_sidekiq_options['expiration'] || UNIQUE_EXPIRATION
       end
 
-      def unique_enabled?(item)
-        enabled = get_sidekiq_options['unique']
+      def unique_enabled?(klass, item)
+        enabled = klass.get_sidekiq_options['unique']
         if item.has_key?('at') && enabled != :all
           enabled = false
         end
         enabled
       end
 
-      def unique_manual?
-        get_sidekiq_options['manual']
+      def unique_manual?(klass)
+        klass.get_sidekiq_options['manual']
       end
     end
   end
-end
-
-Sidekiq::Worker::ClassMethods.class_eval do
-  include Sidekiq::Middleware::Worker
 end

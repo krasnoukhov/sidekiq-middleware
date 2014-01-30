@@ -4,10 +4,10 @@ module Sidekiq
       class UniqueJobs
         def call(worker_class, item, queue)
           worker_class = worker_class.constantize if worker_class.is_a?(String)
-          enabled = worker_class.unique_enabled?(item)
+          enabled = Sidekiq::Middleware::Helpers.unique_enabled?(worker_class, item)
 
           if enabled
-            expiration = worker_class.unique_exiration
+            expiration = Sidekiq::Middleware::Helpers.unique_exiration(worker_class)
             job_id = item['jid']
             unique = false
 
@@ -18,7 +18,7 @@ module Sidekiq
               expiration += (item['at'].to_i - Time.now.to_i)
             end
 
-            unique_key = worker_class.unique_digest(item)
+            unique_key = Sidekiq::Middleware::Helpers.unique_digest(worker_class, item)
 
             Sidekiq.redis do |conn|
               conn.watch(unique_key)

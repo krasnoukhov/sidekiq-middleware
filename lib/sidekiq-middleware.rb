@@ -1,7 +1,7 @@
 require 'digest/md5'
 require 'sidekiq-middleware/version'
 require 'sidekiq-middleware/core_ext'
-require 'sidekiq-middleware/worker'
+require 'sidekiq-middleware/helpers'
 require 'sidekiq-middleware/server/unique_jobs'
 require 'sidekiq-middleware/client/unique_jobs'
 require 'sidekiq-middleware/middleware'
