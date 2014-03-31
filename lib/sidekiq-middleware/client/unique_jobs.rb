@@ -19,7 +19,7 @@ module Sidekiq
 
             unique_key = Sidekiq::Middleware::Helpers.unique_digest(worker_class, item)
 
-            # Sidekiq > 3.0?
+            # Sidekiq >= 3.0
             unique = if redis_pool
               redis_pool.with { |conn| status(conn, unique_key, expiration, job_id) }
             else
