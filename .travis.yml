@@ -3,6 +3,11 @@ rvm:
   - 2.0.0
   - 2.1.0
   - 2.1.1
+env:
+  matrix:
+    - SIDEKIQ_VERSION="~> 2.12.0"
+    - SIDEKIQ_VERSION="~> 2.17.0"
+    - SIDEKIQ_VERSION="~> 3.0.0"
 branches:
   only:
     - master
