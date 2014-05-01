@@ -1,8 +1,7 @@
 language: ruby
 rvm:
   - 2.0.0
-  - 2.1.0
-  - 2.1.1
+  - 2.1
 env:
   matrix:
     - SIDEKIQ_VERSION="~> 2.12.0"
