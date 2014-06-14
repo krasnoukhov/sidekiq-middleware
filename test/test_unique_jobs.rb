@@ -45,7 +45,7 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       end
 
       it 'duplicates scheduled messages' do
-        at = Time.now.to_f
+        at = Time.now.to_f + 10
         5.times { Sidekiq::Client.push('class' => NotUniqueWorker, 'args' => ['args'], 'at' => at) }
         assert_equal 5, Sidekiq.redis { |c| c.zcard('schedule') }
       end
@@ -71,7 +71,7 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
       end
 
       it 'duplicates scheduled messages' do
-        at = Time.now.to_f
+        at = Time.now.to_f + 10
         5.times { Sidekiq::Client.push('class' => UniqueWorker, 'args' => ['args'], 'at' => at) }
         assert_equal 5, Sidekiq.redis { |c| c.zcard('schedule') }
       end

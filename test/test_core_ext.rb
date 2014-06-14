@@ -3,7 +3,7 @@ require 'sidekiq-middleware'
 
 class TestCoreExt < MiniTest::Unit::TestCase
   describe 'for an empty array' do
-    it 'should be an ampty hash' do
+    it 'should be an empty hash' do
       assert_equal({}, {:foo => "bar"}.slice([]))
     end
   end
