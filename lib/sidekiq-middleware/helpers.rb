@@ -17,7 +17,7 @@ module Sidekiq
         end
       end
 
-      def unique_exiration(klass)
+      def unique_expiration(klass)
         klass.get_sidekiq_options['expiration'] || UNIQUE_EXPIRATION
       end
 
