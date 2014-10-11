@@ -7,7 +7,7 @@ module Sidekiq
           enabled = Sidekiq::Middleware::Helpers.unique_enabled?(worker_class, item)
 
           if enabled
-            expiration = Sidekiq::Middleware::Helpers.unique_exiration(worker_class)
+            expiration = Sidekiq::Middleware::Helpers.unique_expiration(worker_class)
             job_id = item['jid']
 
             # Scheduled
