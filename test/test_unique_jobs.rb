@@ -191,5 +191,14 @@ class TestUniqueJobs < MiniTest::Unit::TestCase
         assert_equal 5, Sidekiq.redis { |c| c.zcard('schedule') }
       end
     end
+
+    describe 'when the Worker is not defined' do
+      it 'does not crash' do
+        Sidekiq::Client.push(
+          'queue' => 'default',
+          'class' => 'UndefinedWorker',
+          'args' => ['no_argument'])
+      end
+    end
   end
 end
