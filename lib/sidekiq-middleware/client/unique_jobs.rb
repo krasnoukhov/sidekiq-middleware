@@ -3,8 +3,12 @@ module Sidekiq
     module Client
       class UniqueJobs
         def call(worker_class, item, queue, redis_pool = nil)
-          worker_class = worker_class.constantize if worker_class.is_a?(String)
-          enabled = Sidekiq::Middleware::Helpers.unique_enabled?(worker_class, item)
+          begin
+            worker_class = worker_class.constantize if worker_class.is_a?(String)
+            enabled = Sidekiq::Middleware::Helpers.unique_enabled?(worker_class, item)
+          rescue NameError
+            enabled = false
+          end
 
           if enabled
             expiration = Sidekiq::Middleware::Helpers.unique_expiration(worker_class)
