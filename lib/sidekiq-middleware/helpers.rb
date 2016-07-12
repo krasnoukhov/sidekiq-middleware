@@ -6,9 +6,19 @@ module Sidekiq
       UNIQUE_EXPIRATION = 30 * 60 # 30 minutes
 
       def unique_digest(klass, item)
+        # regular sidekiq job enabled class
         if klass.respond_to?(:lock)
           args = item['args']
           klass.lock(*args)
+        # wrapped ActiveJob sidekiq job
+        elsif klass == ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper
+          job_class = item["wrapped"] # original job class
+          queue = item["queue"]
+          arguments = item["args"].first["arguments"].join(':')
+
+          dumped = Sidekiq.dump_json([queue, arguments])
+          digest = Digest::MD5.hexdigest(dumped)
+          "locks:unique:#{job_class}:#{digest}"
         else
           dumped = Sidekiq.dump_json(item.slice('class', 'queue', 'args'))
           digest = Digest::MD5.hexdigest(dumped)
