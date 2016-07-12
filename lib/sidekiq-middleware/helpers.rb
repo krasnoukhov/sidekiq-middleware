@@ -11,20 +11,32 @@ module Sidekiq
           args = item['args']
           klass.lock(*args)
         # wrapped ActiveJob sidekiq job
-        elsif klass == ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper
-          job_class = item["wrapped"] # original job class
-          queue = item["queue"]
-          arguments = item["args"].first["arguments"].join(':')
-
-          dumped = Sidekiq.dump_json([queue, arguments])
-          digest = Digest::MD5.hexdigest(dumped)
-          "locks:unique:#{job_class}:#{digest}"
+        elsif active_job?(klass)
+          active_job_unique_digest(item)
         else
-          dumped = Sidekiq.dump_json(item.slice('class', 'queue', 'args'))
-          digest = Digest::MD5.hexdigest(dumped)
-
-          "locks:unique:#{digest}"
+          default_unique_digest(item)
         end
+      end
+
+      def active_job?(klass)
+        defined?(ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper) &&
+          ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper == klass
+      end
+
+      def active_job_unique_digest(item)
+        job_class = item["wrapped"] # original job class
+        queue = item["queue"]
+        arguments = item["args"].first["arguments"].join(':')
+
+        dumped = Sidekiq.dump_json([queue, arguments])
+        digest = Digest::MD5.hexdigest(dumped)
+        "locks:unique:#{job_class}:#{digest}"
+      end
+
+      def default_unique_digest(item)
+        dumped = Sidekiq.dump_json(item.slice('class', 'queue', 'args'))
+        digest = Digest::MD5.hexdigest(dumped)
+        "locks:unique:#{item['class']}:#{digest}"
       end
 
       def unique_expiration(klass)
