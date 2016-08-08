@@ -12,7 +12,7 @@ module Sidekiq
           klass.lock(*args)
         # wrapped ActiveJob sidekiq job
         elsif active_job?(klass)
-          active_job_unique_digest(item)
+          active_job_unique_digest(klass, item)
         else
           default_unique_digest(item)
         end
@@ -23,14 +23,21 @@ module Sidekiq
           ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper == klass
       end
 
-      def active_job_unique_digest(item)
+      def active_job_unique_digest(klass, item)
         job_class = item["wrapped"] # original job class
+        job_class = job_class.constantize
+
         queue = item["queue"]
         arguments = item["args"].first["arguments"].join(':')
 
-        dumped = Sidekiq.dump_json([queue, arguments])
-        digest = Digest::MD5.hexdigest(dumped)
-        "locks:unique:#{job_class}:#{digest}"
+        if klass.get_sidekiq_options['human_readable']
+          encoded = arguments unless arguments.blank?
+        else
+          dumped = Sidekiq.dump_json([queue, arguments])
+          encoded = Digest::MD5.hexdigest(dumped)
+        end
+
+        ["locks:unique:#{job_class}", encoded].compact.join(':')
       end
 
       def default_unique_digest(item)
