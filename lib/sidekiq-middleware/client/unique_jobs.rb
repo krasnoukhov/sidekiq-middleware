@@ -11,7 +11,30 @@ module Sidekiq
           end
 
           if enabled
-            expiration = Sidekiq::Middleware::Helpers.unique_expiration(worker_class)
+
+            # Allows for override of the unique_expiration time on a per class basis.
+            #
+            # To configure a unique_exipration specific to a class add a class method
+            # to the class like so:
+            #
+            # class MyJob
+            #   # This overrides the global unique_expiration default
+            #   def self.unique_exipration
+            #     60 # 60 seconds
+            #   end
+            # end
+            #
+            # item["wrapped"] is a string that has the original Job class that ActiveJob
+            # has wrappeed around.
+            original_job_class = item["wrapped"].constantize
+            expiration = if original_job_class.respond_to?(:unique_expiration)
+                           # Allows for override in the job class.
+                           original_job_class.unique_expiration
+                         else
+                           # fallback to the global expiration
+                           Sidekiq::Middleware::Helpers.unique_expiration(worker_class)
+                         end
+
             job_id = item['jid']
 
             # Scheduled
