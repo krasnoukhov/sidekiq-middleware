@@ -29,6 +29,10 @@ module Sidekiq
         enabled
       end
 
+      def unlock_after_failure?(klass)
+        !klass.get_sidekiq_options['lock_after_failure']
+      end
+
       def unique_manual?(klass)
         klass.get_sidekiq_options['manual']
       end

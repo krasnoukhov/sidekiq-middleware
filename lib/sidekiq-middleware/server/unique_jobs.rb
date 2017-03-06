@@ -9,9 +9,11 @@ module Sidekiq
           if enabled
             begin
               yield
+              successful = true
             ensure
               unless Sidekiq::Middleware::Helpers.unique_manual?(worker_class)
-                clear(worker_class, item)
+                unlock_after_failure = Sidekiq::Middleware::Helpers.unlock_after_failure?(worker_class)
+                clear(worker_class, item) if unlock_after_failure || successful || dead?(item)
               end
             end
           else
@@ -23,6 +25,12 @@ module Sidekiq
           Sidekiq.redis do |conn|
             conn.del Sidekiq::Middleware::Helpers.unique_digest(worker_class, item)
           end
+        end
+
+        private
+
+        def dead?(item)
+          item['retry'] == (item['retry_count'].to_i + 1)
         end
       end
     end
